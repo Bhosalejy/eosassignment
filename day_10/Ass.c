@@ -2,64 +2,81 @@
 #include <unistd.h>
 #include <sys/msg.h>
 #include <sys/wait.h>
+#include <stdlib.h>
 
-#define MQ_KEY		0x1234
+#define MQ_KEY 0x1234
 
 typedef struct msg {
-	long type;
-	int num1;
-	int num2;
+    long type;
+    int n1;
+    int n2;
+    int sum;
 } msg_t;
 
 int main() {
-	int mqid, ret, s;
-	int sum ;
-	// create message queue
-	mqid = msgget(MQ_KEY, IPC_CREAT | 0600);
-	if(mqid < 0) {
-		perror("msgget() failed");
-		_exit(1);
-	}
+    int mqid, ret, s;
 
-	ret = fork();
-	if(ret == 0) {
-		// child: initialize and send the message
-		msg_t m1;
-		m1.type = 1;
-		printf("Enter first number: ");
-        scanf("%d", &m1.num1);
+    // Create message queue
+    mqid = msgget(MQ_KEY, IPC_CREAT | 0600);
+    if (mqid < 0) {
+        perror("msgget() failed");
+        exit(1);
+    }
 
-        printf("Enter second number: ");
-        scanf("%d", &m1.num2);
-	
-		ret = msgsnd(mqid, &m1, sizeof(m1.num1), 0);
-		ret = msgsnd(mqid, &m1, sizeof(m1.num2), 0);
-		printf("sender: message sent: %d\n", ret);
-	    printf("The sum is: %d", m1.num1);
-	
-	}
-	else {
-		// parent: receive the message and print it
-		msg_t m2;
-		printf("receiver: waiting for the message...\n");
-		ret = msgrcv(mqid, &m2, sizeof(m2.num1), 1, 0);
-		ret = msgrcv(mqid, &m2, sizeof(m2.num2), 1, 0);
-		sum = m2.num1 + m2.num2;
-		printf("receiver: message received: %d -- %d\n", ret, m2.num1);
-		printf("receiver: message received: %d -- %d\n", ret, m2.num1);
-	
-		// wait for child and clean it up
-		//wait(&s);
+    ret = fork();
+    if (ret == 0) {
+        // Child process: initialize and send the message
+        msg_t m1;
+        m1.type = 1;
+        printf("sender: enter two numbers for the addition: ");
+        scanf("%d %d", &m1.n1, &m1.n2);
+        ret = msgsnd(mqid, &m1, sizeof(m1) - sizeof(long), 0);  
+        if (ret < 0) {
+            perror("msgsnd() failed");
+            exit(1);
+        }
+        printf("sender: message sent\n");
+        
+        // Receive the sum from the parent
+        ret = msgrcv(mqid, &m1, sizeof(m1) - sizeof(long), 1, 0);
+        if (ret < 0) {
+            perror("msgrcv() failed");
+            exit(1);
+        }
+        printf("sender: received sum from the parent is %d\n", m1.sum);
+        exit(0);
+    } else if (ret > 0) {
+        // Parent process: receive the message and print it
+        msg_t m2;
+        printf("receiver: waiting for the message...\n");
+        ret = msgrcv(mqid, &m2, sizeof(m2) - sizeof(long), 1, 0);
+        if (ret < 0) {
+            perror("msgrcv() failed");
+            exit(1);
+        }
+        printf("receiver: message received: %d %d\n", m2.n1, m2.n2);
+        
+        // Calculate sum and send it back to the child
+        m2.sum = m2.n1 + m2.n2;
+        ret = msgsnd(mqid, &m2, sizeof(m2) - sizeof(long), 0);
+        if (ret < 0) {
+            perror("msgsnd() failed");
+            exit(1);
+        }
+        printf("receiver: sent addition to the child\n");
+        
+        // Wait for child to terminate and clean up
+        wait(&s);
 
-		// destroy the message queue
-		msgctl(mqid, IPC_RMID, NULL);
-	}
-	return 0;
+        // Destroy the message queue
+        msgctl(mqid, IPC_RMID, NULL);
+    } else {
+        perror("fork() failed");
+        exit(1);
+    }
+
+    return 0;
 }
-
-
-
-
 
 
 
