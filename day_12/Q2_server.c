@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <sys/un.h>
 
+
 // server
 #define SERV_PORT	2809
 #define SERV_IP		"127.0.0.1"
@@ -41,7 +42,7 @@ int main() {
 //	while(1) {
 		read(cli_fd, &num1, sizeof(num1));
 		read(cli_fd, &num2, sizeof(num2));
-		printf("client: %d %d\n", &num1, &num2);
+		printf("client: %d %d\n", num1, num2);
         
 		res = num1 + num2;
 		printf("server: ");
