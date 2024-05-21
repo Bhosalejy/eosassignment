@@ -1,52 +1,45 @@
-
 #include <stdio.h>
+#include <unistd.h>
 #include <pthread.h>
 
-#define ARRAY_SIZE 10
+//	Q1. Create a thread to sort given array of 10 integers using selection sort. Main thread should print the result after sorting is completed.
 
-void selection_sort(int arr[]) { 
-	int i, j, min_index, temp;
-
-	for (i = 0; i < ARRAY_SIZE - 1; i++) {
-    min_index = i;
-    
-    for (j = i + 1; j < ARRAY_SIZE; j++) {
-        if (arr[j] < arr[min_index]) {
-            min_index = j;
-        }
-    }
-    
-    // Swap the found minimum element with the first element
-    temp = arr[min_index];
-    arr[min_index] = arr[i];
-    arr[i] = temp;
-}
-
-}
-
-void *sort_thread(void *arg) { int *arr = (int *)arg;
-
- 
-	selection_sort(arr);
-
-	pthread_exit(0);
-
-}
-
-int main() { 
-	int arr[ARRAY_SIZE] = { 4, 2, 7, 1, 9, 3, 5, 8, 6, 10 }; 
-	pthread_t tid;
-
-	pthread_create(&tid, NULL, sort_thread, &arr);
-	pthread_join(tid, NULL);
-
-	// Print the sorted array
-	printf("Sorted Array: ");
-	for (int i = 0; i < ARRAY_SIZE; i++) {
-    printf("%d ", arr[i]);
-}
+// step 1: implement thread function
+void* sort_array(void *param){
+int n=10, *arr = (int*)param, i, j, size=10;  
+      for (i = 0; i < n-1; i++)
+      {
+         for (j = i+1; j < n; j++)
+         {
+              if (arr[i] > arr[j]){
+                 int temp = arr[i];
+                  arr[i] = arr[j];
+                  arr[j] = temp;
+              }
+          }
+      }
+      
+	  printf("sorted array....\n");
+      for(i=0; i<size; i++){
+         printf("%d ",arr[i]);	
+		}
 	printf("\n");
-
-return 0;
-
+	return NULL;
 }
+
+
+int main() {
+	int ret,i,arr[10]={22,40,55,5,16,26,90,101,37,80};
+	pthread_t t1;
+	// step 2: call pthread_create()
+	ret = pthread_create(&t1, NULL, sort_array, arr);
+	pthread_join(t1, NULL);
+	printf("t1 array...\n");
+	for(i=0; i<10; i++)
+            printf("%d ",arr[i]);
+	printf("\n");
+	printf("press enter to exit...\n");
+	getchar();
+	return 0;
+}
+
